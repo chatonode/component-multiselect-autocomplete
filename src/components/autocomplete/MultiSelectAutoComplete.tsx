@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useReducer } from 'react'
+import { ChangeEvent, useReducer, useRef } from 'react'
 
 import classes from './MultiSelectAutoComplete.module.css'
 import { TApiCharacter } from '../../types/ram-api'
@@ -121,6 +121,22 @@ const multiSelectAutoCompleteReducer = (
 
     // Checking/Unchecking & Searching
     case EActionType.SET_SEARCH_TERM:
+      if (action.payload.searchTerm.trim().length === 0) {
+        console.log('searchTerm:', action.payload.searchTerm)
+
+        return {
+          searchTerm: INITIAL_STATE.searchTerm,
+          options: {
+            original: prevState.options.original,
+            selected: prevState.options.selected,
+            searchedAndFiltered: prevState.options.original,
+          },
+          dropdown: {
+            isVisible: prevState.dropdown.isVisible,
+          },
+        }
+      }
+
       const searchedAndFilteredOptions = prevState.options.original.filter(
         (option) =>
           option.name
@@ -284,6 +300,7 @@ const multiSelectAutoCompleteReducer = (
 }
 
 const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
+  const inputRef = useRef<HTMLInputElement>(null)
   const [state, dispatch] = useReducer(multiSelectAutoCompleteReducer, {
     searchTerm: INITIAL_STATE.searchTerm,
     options: {
@@ -308,6 +325,17 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
     })
   }
 
+  const toggleDropdownHandler = () => {
+    if (state.dropdown.isVisible) {
+      closeDropdownHandler()
+
+      return
+    }
+
+    focusSearchInputHandler()
+    openDropdownHandler()
+  }
+
   const changeSearchTermHandler = (event: ChangeEvent<HTMLInputElement>) => {
     dispatch({
       type: EActionType.OPEN_DROPDOWN,
@@ -320,12 +348,12 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
     })
   }
 
-  const checkOptionHandler = (optionId: TOption['id']) => {
-    dispatch({
-      type: EActionType.CHECK_OPTION,
-      payload: { checkedOptionId: optionId },
-    })
-  }
+  // const checkOptionHandler = (optionId: TOption['id']) => {
+  //   dispatch({
+  //     type: EActionType.CHECK_OPTION,
+  //     payload: { checkedOptionId: optionId },
+  //   })
+  // }
 
   const uncheckOptionHandler = (optionId: TOption['id']) => {
     dispatch({
@@ -343,10 +371,18 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
     })
   }
 
-  const uncheckAllOptionsHandler = () => {
-    dispatch({
-      type: EActionType.UNCHECK_ALL_OPTIONS,
-    })
+  // const uncheckAllOptionsHandler = () => {
+  //   dispatch({
+  //     type: EActionType.UNCHECK_ALL_OPTIONS,
+  //   })
+  // }
+
+  const focusSearchInputHandler = () => {
+    // Check if the inputRef is not null and has a current property
+    if (inputRef.current) {
+      // Focus the input element
+      inputRef.current.focus()
+    }
   }
 
   const dropdownArrowClasses = `${classes['dropdown-arrow']}${
@@ -356,7 +392,10 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
   return (
     <div className={classes.container}>
       <div className={classes['search-container']}>
-        <div className={classes['search-input-container']}>
+        <div
+          className={classes['search-input-container']}
+          onClick={focusSearchInputHandler}
+        >
           {/* {Selected Option(s) with 'name', if each option exists} */}
           {/* <div className={classes['selected-options']}> */}
           {state.options.selected.map((option) => {
@@ -375,19 +414,13 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
           })}
           {/* </div> */}
           <input
+            ref={inputRef}
             className={classes['search-input']}
             onChange={changeSearchTermHandler}
             placeholder="search..."
           />
         </div>
-        <span
-          className={dropdownArrowClasses}
-          onClick={
-            state.dropdown.isVisible
-              ? closeDropdownHandler
-              : openDropdownHandler
-          }
-        >
+        <span className={dropdownArrowClasses} onClick={toggleDropdownHandler}>
           {/* {dropdown arrow button icon} */}
           <DropdownIcon />
         </span>
@@ -397,32 +430,36 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
         <div className={classes['dropdown-container']}>
           {/* {isLoading} */}
           {/* {error} */}
-          {/* {state.options.searchedAndFiltered.map()} */}
-          {state.options.searchedAndFiltered.map((option) => {
-            const optionIsSelected = state.options.selected.some(
-              (selectedOption) => selectedOption.id === option.id
-            )
+          {state.searchTerm.trim().length !== 0 &&
+            state.options.searchedAndFiltered.length === 0 && (
+              <div className={classes['no-results']}>No results found...</div>
+            )}
+          {state.options.searchedAndFiltered.length !== 0 &&
+            state.options.searchedAndFiltered.map((option) => {
+              const optionIsSelected = state.options.selected.some(
+                (selectedOption) => selectedOption.id === option.id
+              )
 
-            return (
-              <div
-                key={option.id}
-                className={`${classes.option}${
-                  optionIsSelected ? ` ${classes.selected}` : ''
-                }`}
-                onClick={() => toggleOptionCheckHandler(option.id)}
-              >
-                <input type="checkbox" checked={optionIsSelected} readOnly />
-                <img src={option.image} alt={option.name} />
-                <div className={classes['option-detail']}>
-                  <p>{option.name}</p>
-                  <span>
-                    {option.episode.length} Episode
-                    {option.episode.length === 1 ? '' : 's'}
-                  </span>
+              return (
+                <div
+                  key={option.id}
+                  className={`${classes.option}${
+                    optionIsSelected ? ` ${classes.selected}` : ''
+                  }`}
+                  onClick={() => toggleOptionCheckHandler(option.id)}
+                >
+                  <input type="checkbox" checked={optionIsSelected} readOnly />
+                  <img src={option.image} alt={option.name} />
+                  <div className={classes['option-detail']}>
+                    <p>{option.name}</p>
+                    <span>
+                      {option.episode.length} Episode
+                      {option.episode.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
         </div>
       )}
     </div>
