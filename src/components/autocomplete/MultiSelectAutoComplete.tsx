@@ -1,4 +1,4 @@
-import { ChangeEvent, act, useReducer, useRef } from 'react'
+import { ChangeEvent, useReducer, useRef } from 'react'
 
 import classes from './MultiSelectAutoComplete.module.css'
 import { TApiCharacter } from '../../types/ram-api'
