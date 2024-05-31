@@ -55,6 +55,10 @@ function App() {
           onSelectionChange={selectionChangeHandler}
           // options={OPTIONS}
         /> */}
+        <h1>Multi-Select Autocomplete Example</h1>
+        <h3>
+          API: <a href="https://rickandmortyapi.com/">Rick and Morty API</a>
+        </h3>
         {isLoading && <div className={classes.loading}>Loading...</div>}
         {error && <div className={classes.error}>{error}</div>}
         {!isLoading && <MultiSelectAutoComplete options={characters} />}
