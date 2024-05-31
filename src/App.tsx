@@ -32,7 +32,7 @@ function App() {
           nextPage = nextResponse.data.info.next
         }
 
-        console.log('allResults', allResults)
+        // console.log('allResults', allResults)
 
         setCharacters(allResults)
         setIsLoading(false)
@@ -48,10 +48,6 @@ function App() {
   return (
     <>
       <main>
-        {/* <MultiSelectAutocomplete
-          onSelectionChange={selectionChangeHandler}
-          // options={OPTIONS}
-        /> */}
         <h1>Multi-Select Autocomplete Example</h1>
         <h3>
           <a
