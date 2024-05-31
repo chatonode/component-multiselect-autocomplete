@@ -87,7 +87,7 @@ select {
   }
 }
 
-/* My Custom Styling */
+/* Custom Styling */
 
 main {
   width: 100%;
@@ -99,4 +99,5 @@ main {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
+  gap: 1em;
 }
