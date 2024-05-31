@@ -1,6 +1,8 @@
-import classes from './MultiSelectAutoComplete.module.css'
 import { ChangeEvent, useEffect, useReducer } from 'react'
+
+import classes from './MultiSelectAutoComplete.module.css'
 import { TApiCharacter } from '../../types/ram-api'
+import DropdownIcon from '../UI/svg/DropdownIcon'
 
 /** Types */
 
@@ -348,23 +350,25 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
 
   return (
     <div className={classes.container}>
-      <div className={classes['search-input-container']}>
-        <div className={classes['search-input']}>
+      <div className={classes['search-container']}>
+        <div className={classes['search-input-container']}>
           {/* {Selected Option(s) with 'name', if each option exists} */}
-          {state.options.selected.map((option) => {
-            return (
-              <div key={option.id} className={classes['selected-option']}>
-                {option.name}
-                <button
-                  type="button"
-                  className={classes['uncheck-selected-option']}
-                  onClick={() => uncheckOptionHandler(option.id)}
-                >
-                  &times;
-                </button>
-              </div>
-            )
-          })}
+          <div className={classes['selected-options']}>
+            {state.options.selected.map((option) => {
+              return (
+                <div key={option.id} className={classes['selected-option']}>
+                  {option.name}
+                  <button
+                    type="button"
+                    className={classes['uncheck-selected-option']}
+                    onClick={() => uncheckOptionHandler(option.id)}
+                  >
+                    &times;
+                  </button>
+                </div>
+              )
+            })}
+          </div>
           <input
             className={classes['search-input']}
             onChange={changeSearchTermHandler}
@@ -374,7 +378,8 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
           className={classes['dropdown-arrow']}
           onClick={openDropdownHandler}
         >
-          {/* {dropdown arrow button icon} */}\_/
+          {/* {dropdown arrow button icon} */}
+          <DropdownIcon />
         </span>
       </div>
       {/* {Dropdown} */}
