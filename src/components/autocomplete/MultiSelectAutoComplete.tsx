@@ -3,6 +3,7 @@ import { ChangeEvent, useReducer, useRef } from 'react'
 import classes from './MultiSelectAutoComplete.module.css'
 import { TApiCharacter } from '../../types/ram-api'
 import DropdownIcon from '../UI/svg/DropdownIcon'
+import HighlightedOption from './option/HighlightedOption'
 
 /** Types */
 
@@ -122,8 +123,6 @@ const multiSelectAutoCompleteReducer = (
     // Checking/Unchecking & Searching
     case EActionType.SET_SEARCH_TERM:
       if (action.payload.searchTerm.trim().length === 0) {
-        console.log('searchTerm:', action.payload.searchTerm)
-
         return {
           searchTerm: INITIAL_STATE.searchTerm,
           options: {
@@ -206,8 +205,6 @@ const multiSelectAutoCompleteReducer = (
             return option.id !== action.payload.uncheckedOptionId
           }
         )
-
-        console.log('newSelectedOptions:', newSelectedOptions)
 
         return {
           searchTerm: prevState.searchTerm,
@@ -396,8 +393,6 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
           className={classes['search-input-container']}
           onClick={focusSearchInputHandler}
         >
-          {/* {Selected Option(s) with 'name', if each option exists} */}
-          {/* <div className={classes['selected-options']}> */}
           {state.options.selected.map((option) => {
             return (
               <div key={option.id} className={classes['selected-option']}>
@@ -412,16 +407,14 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
               </div>
             )
           })}
-          {/* </div> */}
           <input
             ref={inputRef}
             className={classes['search-input']}
             onChange={changeSearchTermHandler}
-            placeholder="search..."
+            placeholder="Search..."
           />
         </div>
         <span className={dropdownArrowClasses} onClick={toggleDropdownHandler}>
-          {/* {dropdown arrow button icon} */}
           <DropdownIcon />
         </span>
       </div>
@@ -432,7 +425,7 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
           {/* {error} */}
           {state.searchTerm.trim().length !== 0 &&
             state.options.searchedAndFiltered.length === 0 && (
-              <div className={classes['no-results']}>No results found...</div>
+              <div className={classes['no-results']}>No results found.</div>
             )}
           {state.options.searchedAndFiltered.length !== 0 &&
             state.options.searchedAndFiltered.map((option) => {
@@ -451,7 +444,12 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
                   <input type="checkbox" checked={optionIsSelected} readOnly />
                   <img src={option.image} alt={option.name} />
                   <div className={classes['option-detail']}>
-                    <p>{option.name}</p>
+                    <p>
+                      <HighlightedOption
+                        text={option.name}
+                        highlight={state.searchTerm}
+                      />
+                    </p>
                     <span>
                       {option.episode.length} Episode
                       {option.episode.length === 1 ? '' : 's'}
