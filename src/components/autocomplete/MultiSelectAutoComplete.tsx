@@ -516,7 +516,7 @@ const MultiSelectAutoComplete = () => {
       })
     }
   }, [state.searchTerm])
-  
+
   const openDropdownHandler = () => {
     dispatch({
       type: EActionType.OPEN_DROPDOWN,
@@ -715,7 +715,12 @@ const MultiSelectAutoComplete = () => {
               )
             })}
           {state.options.filtered.length > 0 && state.options.nextUrl && (
-            <div className={`${classes.navigation}`} onClick={loadMoreHandler}>
+            <div
+              className={`${classes.navigation}${
+                state.dropdown.isLoading ? ` ${classes.loading}` : ''
+              }`}
+              onClick={state.dropdown.isLoading ? undefined : loadMoreHandler}
+            >
               {/* <span>{`<< First`}</span> */}
               {/* <span>{`< Previous`}</span> */}
               {/* <span>{`Next >`}</span> */}
