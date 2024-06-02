@@ -1,8 +1,8 @@
 // import { useEffect, useState } from 'react'
 // import axios from 'axios'
 
-import { TApiCharacter } from './types/ram-api'
-import classes from './App.module.css'
+// import { TApiCharacter } from './types/ram-api'
+// import classes from './App.module.css'
 
 import MultiSelectAutoComplete from './components/autocomplete/MultiSelectAutoComplete'
 
