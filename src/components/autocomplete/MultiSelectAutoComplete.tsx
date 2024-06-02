@@ -40,8 +40,6 @@ export enum EActionType {
   UPDATE_FILTERED_OPTIONS = 'UPDATE_FILTERED_OPTIONS',
   // CLEAR_FILTERED_OPTIONS = 'CLEAR_FILTERED_OPTIONS',
 
-  // SET_NEXT_OPTIONS_URL = 'SET_NEXT_OPTIONS_URL',
-
   CHECK_OPTION = 'CHECK_OPTION',
   UNCHECK_OPTION = 'UNCHECK_OPTION',
   TOGGLE_OPTION_CHECK = 'TOGGLE_OPTION_CHECK',
@@ -74,12 +72,6 @@ export type TAction =
         nextOptionsUrl: TApiUrl | null
       }
     }
-  // | {
-  //     type: EActionType.SET_NEXT_OPTIONS_URL
-  //     payload: {
-  //       nextOptionsUrl: TApiUrl
-  //     }
-  //   }
   | {
       type: EActionType.CHECK_OPTION
       payload: {
@@ -100,9 +92,9 @@ export type TAction =
       }
     }
 
-type TMultiSelectAutoCompleteProps = {
-  // options: TOption[]
-}
+// type TMultiSelectAutoCompleteProps = {
+//   // options: TOption[]
+// }
 
 /**    Constants */
 
@@ -111,7 +103,6 @@ const INITIAL_STATE: TState = {
   options: {
     selected: [],
     filtered: [],
-    // nextUrl: 'https://rickandmortyapi.com/api/character',
     nextUrl: null,
   },
   dropdown: {
@@ -151,7 +142,7 @@ const multiSelectAutoCompleteReducer = (
         },
       }
 
-    // Checking/Unchecking & Searching
+    // Searching
     case EActionType.SET_SEARCH_TERM:
       if (action.payload.searchTerm.trim().length === 0) {
         return {
@@ -179,6 +170,7 @@ const multiSelectAutoCompleteReducer = (
         },
       }
 
+    // Filtered Options
     case EActionType.SET_FILTERED_OPTIONS:
       return {
         searchTerm: prevState.searchTerm,
@@ -222,6 +214,7 @@ const multiSelectAutoCompleteReducer = (
         },
       }
 
+    // Checking/Unchecking/Toggling Option
     case EActionType.CHECK_OPTION:
       // If already unchecked
       if (
@@ -368,7 +361,7 @@ const multiSelectAutoCompleteReducer = (
   }
 }
 
-const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
+const MultiSelectAutoComplete = () => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [state, dispatch] = useReducer(multiSelectAutoCompleteReducer, {
     searchTerm: INITIAL_STATE.searchTerm,
@@ -381,8 +374,6 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
       isVisible: INITIAL_STATE.dropdown.isVisible,
     },
   })
-
-  console.log(state.options)
 
   const openDropdownHandler = () => {
     dispatch({
@@ -419,15 +410,12 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
   }
 
   const loadMoreHandler = () => {
-    console.log('Am i clicked?', state.options)
-
     const fetchNextFilteredOptions = async (nextUrl: TApiUrl) => {
       try {
         const response = await axios.get(nextUrl)
         const data = response.data
 
-        // TODO fetch all the next pages after reviewing this request: https://rickandmortyapi.com/api/character/?name=r
-        if (data.results) {
+        if (data.results && data.info) {
           dispatch({
             type: EActionType.UPDATE_FILTERED_OPTIONS,
             payload: {
@@ -444,11 +432,10 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
       }
     }
 
-    if (state.options.nextUrl === null) {
+    if (state.options.nextUrl !== null) {
+      fetchNextFilteredOptions(state.options.nextUrl)
       return
     }
-
-    fetchNextFilteredOptions(state.options.nextUrl)
   }
 
   useEffect(() => {
@@ -458,8 +445,7 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
           `https://rickandmortyapi.com/api/character/?name=${searchTerm}`
         )
         const data = response.data
-        // TODO fetch all the next pages after reviewing this request: https://rickandmortyapi.com/api/character/?name=r
-        if (data.results) {
+        if (data.results && data.info) {
           dispatch({
             type: EActionType.SET_FILTERED_OPTIONS,
             payload: {
@@ -607,7 +593,7 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
                 </div>
               )
             })}
-          {state.options.nextUrl && (
+          {state.options.filtered.length > 0 && state.options.nextUrl && (
             <div className={`${classes.navigation}`} onClick={loadMoreHandler}>
               {/* <span>{`<< First`}</span> */}
               {/* <span>{`< Previous`}</span> */}
