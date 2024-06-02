@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useReducer, useRef } from 'react'
 
 import classes from './MultiSelectAutoComplete.module.css'
-import { TApiCharacter } from '../../types/ram-api'
+import { TApiCharacter, TRickAndMortyApiUrl } from '../../types/ram-api'
 import DropdownIcon from '../UI/svg/DropdownIcon'
 import HighlightedOption from './option/HighlightedOption'
 import axios from 'axios'
@@ -9,12 +9,14 @@ import axios from 'axios'
 /** Types */
 
 type TOption = TApiCharacter
+type TApiUrl = TRickAndMortyApiUrl
 
 type TStateSearchTerm = string
 
 type TStateOptions = {
   selected: TOption[]
-  searchedAndFiltered: TOption[]
+  filtered: TOption[]
+  nextUrl: TApiUrl | null
 }
 
 type TStateDropdown = {
@@ -34,7 +36,11 @@ export enum EActionType {
   SET_SEARCH_TERM = 'SET_SEARCH_TERM',
 
   SET_FILTERED_OPTIONS = 'SET_FILTERED_OPTIONS',
+  SET_FILTERED_OPTIONS_NOT_FOUND = 'SET_FILTERED_OPTIONS_NOT_FOUND',
+  UPDATE_FILTERED_OPTIONS = 'UPDATE_FILTERED_OPTIONS',
   // CLEAR_FILTERED_OPTIONS = 'CLEAR_FILTERED_OPTIONS',
+
+  // SET_NEXT_OPTIONS_URL = 'SET_NEXT_OPTIONS_URL',
 
   CHECK_OPTION = 'CHECK_OPTION',
   UNCHECK_OPTION = 'UNCHECK_OPTION',
@@ -55,8 +61,25 @@ export type TAction =
       type: EActionType.SET_FILTERED_OPTIONS
       payload: {
         filteredOptions: TOption[]
+        nextOptionsUrl: TApiUrl | null
       }
     }
+  | {
+      type: EActionType.SET_FILTERED_OPTIONS_NOT_FOUND
+    }
+  | {
+      type: EActionType.UPDATE_FILTERED_OPTIONS
+      payload: {
+        moreFilteredOptions: TOption[]
+        nextOptionsUrl: TApiUrl | null
+      }
+    }
+  // | {
+  //     type: EActionType.SET_NEXT_OPTIONS_URL
+  //     payload: {
+  //       nextOptionsUrl: TApiUrl
+  //     }
+  //   }
   | {
       type: EActionType.CHECK_OPTION
       payload: {
@@ -87,7 +110,9 @@ const INITIAL_STATE: TState = {
   searchTerm: '',
   options: {
     selected: [],
-    searchedAndFiltered: [],
+    filtered: [],
+    // nextUrl: 'https://rickandmortyapi.com/api/character',
+    nextUrl: null,
   },
   dropdown: {
     isVisible: false,
@@ -105,7 +130,8 @@ const multiSelectAutoCompleteReducer = (
         ...prevState,
         options: {
           selected: prevState.options.selected,
-          searchedAndFiltered: prevState.options.searchedAndFiltered,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
           isVisible: true,
@@ -117,7 +143,8 @@ const multiSelectAutoCompleteReducer = (
         ...prevState,
         options: {
           selected: prevState.options.selected,
-          searchedAndFiltered: prevState.options.searchedAndFiltered,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
           isVisible: false,
@@ -131,7 +158,8 @@ const multiSelectAutoCompleteReducer = (
           searchTerm: INITIAL_STATE.searchTerm,
           options: {
             selected: prevState.options.selected,
-            searchedAndFiltered: prevState.options.searchedAndFiltered,
+            filtered: prevState.options.filtered,
+            nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
             isVisible: prevState.dropdown.isVisible,
@@ -143,11 +171,11 @@ const multiSelectAutoCompleteReducer = (
         searchTerm: action.payload.searchTerm,
         options: {
           selected: prevState.options.selected,
-          searchedAndFiltered: prevState.options.searchedAndFiltered,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
-          ...prevState.dropdown,
-          //   isVisible: false,
+          isVisible: prevState.dropdown.isVisible,
         },
       }
 
@@ -156,7 +184,38 @@ const multiSelectAutoCompleteReducer = (
         searchTerm: prevState.searchTerm,
         options: {
           selected: prevState.options.selected,
-          searchedAndFiltered: action.payload.filteredOptions,
+          filtered: action.payload.filteredOptions,
+          nextUrl: action.payload.nextOptionsUrl,
+        },
+        dropdown: {
+          isVisible: prevState.dropdown.isVisible,
+        },
+      }
+
+    case EActionType.SET_FILTERED_OPTIONS_NOT_FOUND:
+      return {
+        searchTerm: prevState.searchTerm,
+        options: {
+          selected: prevState.options.selected,
+          filtered: [],
+          nextUrl: prevState.options.nextUrl,
+        },
+        dropdown: {
+          isVisible: prevState.dropdown.isVisible,
+        },
+      }
+
+    case EActionType.UPDATE_FILTERED_OPTIONS:
+      const updatedFilteredOptions = [
+        ...prevState.options.filtered,
+        ...action.payload.moreFilteredOptions,
+      ]
+      return {
+        searchTerm: prevState.searchTerm,
+        options: {
+          selected: prevState.options.selected,
+          filtered: updatedFilteredOptions,
+          nextUrl: action.payload.nextOptionsUrl,
         },
         dropdown: {
           isVisible: prevState.dropdown.isVisible,
@@ -170,7 +229,7 @@ const multiSelectAutoCompleteReducer = (
           (selected) => selected.id === action.payload.checkedOption.id
         )
       ) {
-        const selectedOption = prevState.options.searchedAndFiltered.find(
+        const selectedOption = prevState.options.filtered.find(
           (option) => option.id === action.payload.checkedOption.id
         )!
         const newSelectedOptions: TOption[] = [
@@ -182,7 +241,8 @@ const multiSelectAutoCompleteReducer = (
           searchTerm: prevState.searchTerm,
           options: {
             selected: newSelectedOptions,
-            searchedAndFiltered: prevState.options.searchedAndFiltered,
+            filtered: prevState.options.filtered,
+            nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
             isVisible: prevState.dropdown.isVisible,
@@ -195,7 +255,8 @@ const multiSelectAutoCompleteReducer = (
         searchTerm: prevState.searchTerm,
         options: {
           selected: prevState.options.selected,
-          searchedAndFiltered: prevState.options.searchedAndFiltered,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
           isVisible: prevState.dropdown.isVisible,
@@ -219,7 +280,8 @@ const multiSelectAutoCompleteReducer = (
           searchTerm: prevState.searchTerm,
           options: {
             selected: newSelectedOptions,
-            searchedAndFiltered: prevState.options.searchedAndFiltered,
+            filtered: prevState.options.filtered,
+            nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
             isVisible: prevState.dropdown.isVisible,
@@ -232,7 +294,8 @@ const multiSelectAutoCompleteReducer = (
         searchTerm: prevState.searchTerm,
         options: {
           selected: prevState.options.selected,
-          searchedAndFiltered: prevState.options.searchedAndFiltered,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
           isVisible: prevState.dropdown.isVisible,
@@ -246,7 +309,7 @@ const multiSelectAutoCompleteReducer = (
         )
       ) {
         // CHECK_OPTION
-        const selectedOption = prevState.options.searchedAndFiltered.find(
+        const selectedOption = prevState.options.filtered.find(
           (option) => option.id === action.payload.toggledOption.id
         )!
         const newSelectedOptions: TOption[] = [
@@ -258,7 +321,8 @@ const multiSelectAutoCompleteReducer = (
           searchTerm: prevState.searchTerm,
           options: {
             selected: newSelectedOptions,
-            searchedAndFiltered: prevState.options.searchedAndFiltered,
+            filtered: prevState.options.filtered,
+            nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
             isVisible: prevState.dropdown.isVisible,
@@ -278,7 +342,8 @@ const multiSelectAutoCompleteReducer = (
         searchTerm: prevState.searchTerm,
         options: {
           selected: newSelectedOptions,
-          searchedAndFiltered: prevState.options.searchedAndFiltered,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
           isVisible: prevState.dropdown.isVisible,
@@ -290,7 +355,8 @@ const multiSelectAutoCompleteReducer = (
         searchTerm: prevState.searchTerm,
         options: {
           selected: INITIAL_STATE.options.selected,
-          searchedAndFiltered: prevState.options.searchedAndFiltered,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
           isVisible: prevState.dropdown.isVisible,
@@ -308,12 +374,15 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
     searchTerm: INITIAL_STATE.searchTerm,
     options: {
       selected: INITIAL_STATE.options.selected,
-      searchedAndFiltered: INITIAL_STATE.options.searchedAndFiltered,
+      filtered: INITIAL_STATE.options.filtered,
+      nextUrl: INITIAL_STATE.options.nextUrl,
     },
     dropdown: {
       isVisible: INITIAL_STATE.dropdown.isVisible,
     },
   })
+
+  console.log(state.options)
 
   const openDropdownHandler = () => {
     dispatch({
@@ -349,32 +418,66 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
     })
   }
 
+  const loadMoreHandler = () => {
+    console.log('Am i clicked?', state.options)
+
+    const fetchNextFilteredOptions = async (nextUrl: TApiUrl) => {
+      try {
+        const response = await axios.get(nextUrl)
+        const data = response.data
+
+        // TODO fetch all the next pages after reviewing this request: https://rickandmortyapi.com/api/character/?name=r
+        if (data.results) {
+          dispatch({
+            type: EActionType.UPDATE_FILTERED_OPTIONS,
+            payload: {
+              moreFilteredOptions: data.results,
+              nextOptionsUrl: data.info.next,
+            },
+          })
+        }
+      } catch (error: any) {
+        console.error(error)
+
+        // TODO: add SET_ERROR action
+        // TODO: add SET_IS_LOADING action
+      }
+    }
+
+    if (state.options.nextUrl === null) {
+      return
+    }
+
+    fetchNextFilteredOptions(state.options.nextUrl)
+  }
+
   useEffect(() => {
-    const fetchFilteredOptions = async (searchTerm: string) => {
+    const fetchFilteredOptions = async (searchTerm: TStateSearchTerm) => {
       try {
         const response = await axios.get(
           `https://rickandmortyapi.com/api/character/?name=${searchTerm}`
         )
         const data = response.data
+        // TODO fetch all the next pages after reviewing this request: https://rickandmortyapi.com/api/character/?name=r
         if (data.results) {
           dispatch({
             type: EActionType.SET_FILTERED_OPTIONS,
             payload: {
               filteredOptions: data.results,
+              nextOptionsUrl: data.info.next,
             },
           })
         }
       } catch (error: any) {
         if (error.response.status === 404) {
           dispatch({
-            type: EActionType.SET_FILTERED_OPTIONS,
-            payload: {
-              filteredOptions: [],
-            },
+            type: EActionType.SET_FILTERED_OPTIONS_NOT_FOUND,
           })
 
           return
         }
+
+        console.error(error)
 
         // TODO: add SET_ERROR action
         // TODO: add SET_IS_LOADING action
@@ -470,11 +573,11 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
           {/* {isLoading} */}
           {/* {error} */}
           {state.searchTerm.trim().length !== 0 &&
-            state.options.searchedAndFiltered.length === 0 && (
+            state.options.filtered.length === 0 && (
               <div className={classes['no-results']}>No results found.</div>
             )}
-          {state.options.searchedAndFiltered.length !== 0 &&
-            state.options.searchedAndFiltered.map((option) => {
+          {state.options.filtered.length !== 0 &&
+            state.options.filtered.map((option) => {
               const optionIsSelected = state.options.selected.some(
                 (selectedOption) => selectedOption.id === option.id
               )
@@ -504,6 +607,15 @@ const MultiSelectAutoComplete = (props: TMultiSelectAutoCompleteProps) => {
                 </div>
               )
             })}
+          {state.options.nextUrl && (
+            <div className={`${classes.navigation}`} onClick={loadMoreHandler}>
+              {/* <span>{`<< First`}</span> */}
+              {/* <span>{`< Previous`}</span> */}
+              {/* <span>{`Next >`}</span> */}
+              {/* <span>{`Last >>`}</span> */}
+              <span>Load More...</span>
+            </div>
+          )}
         </div>
       )}
     </div>
