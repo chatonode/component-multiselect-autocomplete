@@ -21,6 +21,8 @@ type TStateOptions = {
 
 type TStateDropdown = {
   isVisible: boolean
+  isLoading: boolean
+  error: string | null
 }
 
 type TState = {
@@ -32,6 +34,10 @@ type TState = {
 export enum EActionType {
   OPEN_DROPDOWN = 'OPEN_DROPDOWN',
   CLOSE_DROPDOWN = 'CLOSE_DROPDOWN',
+  ENABLE_LOADING = 'ENABLE_LOADING',
+  DISABLE_LOADING = 'DISABLE_LOADING',
+  SET_ERROR = 'SET_ERROR',
+  CLEAR_ERROR = 'CLEAR_ERROR',
 
   SET_SEARCH_TERM = 'SET_SEARCH_TERM',
 
@@ -49,6 +55,10 @@ export enum EActionType {
 export type TAction =
   | { type: EActionType.OPEN_DROPDOWN }
   | { type: EActionType.CLOSE_DROPDOWN }
+  | { type: EActionType.ENABLE_LOADING }
+  | { type: EActionType.DISABLE_LOADING }
+  | { type: EActionType.SET_ERROR }
+  | { type: EActionType.CLEAR_ERROR }
   | {
       type: EActionType.SET_SEARCH_TERM
       payload: {
@@ -107,6 +117,8 @@ const INITIAL_STATE: TState = {
   },
   dropdown: {
     isVisible: false,
+    isLoading: false, // or true logically?
+    error: null,
   },
 } as const
 
@@ -126,6 +138,8 @@ const multiSelectAutoCompleteReducer = (
         },
         dropdown: {
           isVisible: true,
+          isLoading: prevState.dropdown.isLoading,
+          error: prevState.dropdown.error,
         },
       }
 
@@ -139,11 +153,44 @@ const multiSelectAutoCompleteReducer = (
         },
         dropdown: {
           isVisible: false,
+          isLoading: prevState.dropdown.isLoading,
+          error: prevState.dropdown.error,
+        },
+      }
+
+    case EActionType.ENABLE_LOADING:
+      return {
+        ...prevState,
+        options: {
+          selected: prevState.options.selected,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
+        },
+        dropdown: {
+          isVisible: prevState.dropdown.isVisible,
+          isLoading: true,
+          error: prevState.dropdown.error,
+        },
+      }
+
+    case EActionType.DISABLE_LOADING:
+      return {
+        ...prevState,
+        options: {
+          selected: prevState.options.selected,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
+        },
+        dropdown: {
+          isVisible: prevState.dropdown.isVisible,
+          isLoading: false,
+          error: prevState.dropdown.error,
         },
       }
 
     // Searching
     case EActionType.SET_SEARCH_TERM:
+      // If trimmed search term has 0 characters
       if (action.payload.searchTerm.trim().length === 0) {
         return {
           searchTerm: INITIAL_STATE.searchTerm,
@@ -153,11 +200,12 @@ const multiSelectAutoCompleteReducer = (
             nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
-            isVisible: prevState.dropdown.isVisible,
+            ...prevState.dropdown,
           },
         }
       }
 
+      // Else
       return {
         searchTerm: action.payload.searchTerm,
         options: {
@@ -166,7 +214,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
 
@@ -180,7 +228,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: action.payload.nextOptionsUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
 
@@ -193,7 +241,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
 
@@ -210,7 +258,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: action.payload.nextOptionsUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
 
@@ -238,7 +286,7 @@ const multiSelectAutoCompleteReducer = (
             nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
-            isVisible: prevState.dropdown.isVisible,
+            ...prevState.dropdown,
           },
         }
       }
@@ -252,7 +300,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
 
@@ -277,7 +325,7 @@ const multiSelectAutoCompleteReducer = (
             nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
-            isVisible: prevState.dropdown.isVisible,
+            ...prevState.dropdown,
           },
         }
       }
@@ -291,7 +339,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
     case EActionType.TOGGLE_OPTION_CHECK:
@@ -318,7 +366,7 @@ const multiSelectAutoCompleteReducer = (
             nextUrl: prevState.options.nextUrl,
           },
           dropdown: {
-            isVisible: prevState.dropdown.isVisible,
+            ...prevState.dropdown,
           },
         }
       }
@@ -339,7 +387,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
 
@@ -352,7 +400,7 @@ const multiSelectAutoCompleteReducer = (
           nextUrl: prevState.options.nextUrl,
         },
         dropdown: {
-          isVisible: prevState.dropdown.isVisible,
+          ...prevState.dropdown,
         },
       }
 
@@ -372,8 +420,12 @@ const MultiSelectAutoComplete = () => {
     },
     dropdown: {
       isVisible: INITIAL_STATE.dropdown.isVisible,
+      isLoading: INITIAL_STATE.dropdown.isLoading,
+      error: INITIAL_STATE.dropdown.error,
     },
   })
+
+  // console.log('State Dropdown:', state.dropdown)
 
   const openDropdownHandler = () => {
     dispatch({
@@ -411,6 +463,10 @@ const MultiSelectAutoComplete = () => {
 
   const loadMoreHandler = () => {
     const fetchNextFilteredOptions = async (nextUrl: TApiUrl) => {
+      dispatch({
+        type: EActionType.ENABLE_LOADING,
+      })
+
       try {
         const response = await axios.get(nextUrl)
         const data = response.data
@@ -424,6 +480,8 @@ const MultiSelectAutoComplete = () => {
             },
           })
         }
+
+        dispatch({ type: EActionType.DISABLE_LOADING })
       } catch (error: any) {
         console.error(error)
 
@@ -433,13 +491,22 @@ const MultiSelectAutoComplete = () => {
     }
 
     if (state.options.nextUrl !== null) {
-      fetchNextFilteredOptions(state.options.nextUrl)
-      return
+      // const timeout = setTimeout(() => {
+      fetchNextFilteredOptions(state.options.nextUrl) // nextUrl!) when inside timeout
+      //   console.log(state.dropdown)
+      // }, 1000)
+
+      // console.log(state.dropdown)
+
+      // return
     }
   }
 
   useEffect(() => {
     const fetchFilteredOptions = async (searchTerm: TStateSearchTerm) => {
+      dispatch({
+        type: EActionType.ENABLE_LOADING,
+      })
       try {
         const response = await axios.get(
           `https://rickandmortyapi.com/api/character/?name=${searchTerm}`
@@ -453,12 +520,16 @@ const MultiSelectAutoComplete = () => {
               nextOptionsUrl: data.info.next,
             },
           })
+
+          dispatch({ type: EActionType.DISABLE_LOADING })
         }
       } catch (error: any) {
         if (error.response.status === 404) {
           dispatch({
             type: EActionType.SET_FILTERED_OPTIONS_NOT_FOUND,
           })
+
+          dispatch({ type: EActionType.DISABLE_LOADING })
 
           return
         }
@@ -599,7 +670,9 @@ const MultiSelectAutoComplete = () => {
               {/* <span>{`< Previous`}</span> */}
               {/* <span>{`Next >`}</span> */}
               {/* <span>{`Last >>`}</span> */}
-              <span>Load More...</span>
+              <span>
+                {state.dropdown.isLoading ? 'Loading...' : 'Load More...'}
+              </span>
             </div>
           )}
         </div>
