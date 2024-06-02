@@ -1,4 +1,4 @@
-type TRickAndMortyApiUrl = `https://rickandmortyapi.com/api/${string}`
+export type TRickAndMortyApiUrl = `https://rickandmortyapi.com/api/${string}`
 
 export type TApiCharacter = {
   id: number
