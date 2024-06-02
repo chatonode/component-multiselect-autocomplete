@@ -151,7 +151,7 @@ input.search-input {
   background-color: #64748b;
 }
 
-.dropdown-container .navigation {
+.navigation {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -162,6 +162,10 @@ input.search-input {
 }
 
 .no-results {
+  font-style: italic;
+}
+
+.error {
   font-style: italic;
 }
 
@@ -178,9 +182,10 @@ input.search-input {
   border-bottom: 2px solid #94a3b8;
 }
 
+.navigation,
 .no-results,
-.option,
-.navigation {
+.error,
+.option {
   padding: 8px;
 }
 

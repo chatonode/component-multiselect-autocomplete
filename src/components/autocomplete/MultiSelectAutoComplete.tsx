@@ -57,7 +57,12 @@ export type TAction =
   | { type: EActionType.CLOSE_DROPDOWN }
   | { type: EActionType.ENABLE_LOADING }
   | { type: EActionType.DISABLE_LOADING }
-  | { type: EActionType.SET_ERROR }
+  | {
+      type: EActionType.SET_ERROR
+      payload: {
+        errorDetail: string
+      }
+    }
   | { type: EActionType.CLEAR_ERROR }
   | {
       type: EActionType.SET_SEARCH_TERM
@@ -158,6 +163,7 @@ const multiSelectAutoCompleteReducer = (
         },
       }
 
+    // Loading
     case EActionType.ENABLE_LOADING:
       return {
         ...prevState,
@@ -185,6 +191,37 @@ const multiSelectAutoCompleteReducer = (
           isVisible: prevState.dropdown.isVisible,
           isLoading: false,
           error: prevState.dropdown.error,
+        },
+      }
+
+    // Error
+    case EActionType.SET_ERROR:
+      return {
+        ...prevState,
+        options: {
+          selected: prevState.options.selected,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
+        },
+        dropdown: {
+          isVisible: prevState.dropdown.isVisible,
+          isLoading: prevState.dropdown.isLoading,
+          error: action.payload.errorDetail,
+        },
+      }
+
+    case EActionType.CLEAR_ERROR:
+      return {
+        ...prevState,
+        options: {
+          selected: prevState.options.selected,
+          filtered: prevState.options.filtered,
+          nextUrl: prevState.options.nextUrl,
+        },
+        dropdown: {
+          isVisible: prevState.dropdown.isVisible,
+          isLoading: prevState.dropdown.isLoading,
+          error: null,
         },
       }
 
@@ -425,8 +462,61 @@ const MultiSelectAutoComplete = () => {
     },
   })
 
-  // console.log('State Dropdown:', state.dropdown)
+  useEffect(() => {
+    const fetchFilteredOptions = async (searchTerm: TStateSearchTerm) => {
+      dispatch({
+        type: EActionType.ENABLE_LOADING,
+      })
+      try {
+        const response = await axios.get(
+          `https://rickandmortyapi.com/api/character/?name=${searchTerm}`
+        )
+        const data = response.data
+        if (data.results && data.info) {
+          dispatch({
+            type: EActionType.SET_FILTERED_OPTIONS,
+            payload: {
+              filteredOptions: data.results,
+              nextOptionsUrl: data.info.next,
+            },
+          })
 
+          dispatch({ type: EActionType.DISABLE_LOADING })
+        }
+      } catch (error: any) {
+        if (error.response.status === 404) {
+          dispatch({
+            type: EActionType.SET_FILTERED_OPTIONS_NOT_FOUND,
+          })
+
+          dispatch({ type: EActionType.DISABLE_LOADING })
+
+          return
+        }
+
+        dispatch({
+          type: EActionType.SET_ERROR,
+          payload: { errorDetail: error.message },
+        })
+
+        dispatch({ type: EActionType.DISABLE_LOADING })
+
+        console.error(error.message)
+      }
+    }
+
+    if (state.searchTerm.trim().length > 0) {
+      fetchFilteredOptions(state.searchTerm)
+    } else {
+      dispatch({
+        type: EActionType.SET_SEARCH_TERM,
+        payload: {
+          searchTerm: '',
+        },
+      })
+    }
+  }, [state.searchTerm])
+  
   const openDropdownHandler = () => {
     dispatch({
       type: EActionType.OPEN_DROPDOWN,
@@ -468,6 +558,7 @@ const MultiSelectAutoComplete = () => {
       })
 
       try {
+        // throw new Error('Test Error')
         const response = await axios.get(nextUrl)
         const data = response.data
 
@@ -483,10 +574,14 @@ const MultiSelectAutoComplete = () => {
 
         dispatch({ type: EActionType.DISABLE_LOADING })
       } catch (error: any) {
-        console.error(error)
+        dispatch({
+          type: EActionType.SET_ERROR,
+          payload: { errorDetail: error.message },
+        })
 
-        // TODO: add SET_ERROR action
-        // TODO: add SET_IS_LOADING action
+        dispatch({ type: EActionType.DISABLE_LOADING })
+
+        console.error(error.message)
       }
     }
 
@@ -501,57 +596,6 @@ const MultiSelectAutoComplete = () => {
       // return
     }
   }
-
-  useEffect(() => {
-    const fetchFilteredOptions = async (searchTerm: TStateSearchTerm) => {
-      dispatch({
-        type: EActionType.ENABLE_LOADING,
-      })
-      try {
-        const response = await axios.get(
-          `https://rickandmortyapi.com/api/character/?name=${searchTerm}`
-        )
-        const data = response.data
-        if (data.results && data.info) {
-          dispatch({
-            type: EActionType.SET_FILTERED_OPTIONS,
-            payload: {
-              filteredOptions: data.results,
-              nextOptionsUrl: data.info.next,
-            },
-          })
-
-          dispatch({ type: EActionType.DISABLE_LOADING })
-        }
-      } catch (error: any) {
-        if (error.response.status === 404) {
-          dispatch({
-            type: EActionType.SET_FILTERED_OPTIONS_NOT_FOUND,
-          })
-
-          dispatch({ type: EActionType.DISABLE_LOADING })
-
-          return
-        }
-
-        console.error(error)
-
-        // TODO: add SET_ERROR action
-        // TODO: add SET_IS_LOADING action
-      }
-    }
-
-    if (state.searchTerm.trim().length > 0) {
-      fetchFilteredOptions(state.searchTerm)
-    } else {
-      dispatch({
-        type: EActionType.SET_SEARCH_TERM,
-        payload: {
-          searchTerm: '',
-        },
-      })
-    }
-  }, [state.searchTerm])
 
   // const checkOptionHandler = (optionId: TOption['id']) => {
   //   dispatch({
@@ -633,6 +677,12 @@ const MultiSelectAutoComplete = () => {
             state.options.filtered.length === 0 && (
               <div className={classes['no-results']}>No results found.</div>
             )}
+          {state.dropdown.error && (
+            <div className={classes['error']}>
+              <h2>Error</h2>
+              <p>{state.dropdown.error}</p>
+            </div>
+          )}
           {state.options.filtered.length !== 0 &&
             state.options.filtered.map((option) => {
               const optionIsSelected = state.options.selected.some(
