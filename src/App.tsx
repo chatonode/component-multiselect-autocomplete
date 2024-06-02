@@ -2,7 +2,7 @@
 // import axios from 'axios'
 
 // import { TApiCharacter } from './types/ram-api'
-// import classes from './App.module.css'
+import classes from './App.module.css'
 
 import MultiSelectAutoComplete from './components/autocomplete/MultiSelectAutoComplete'
 
@@ -47,7 +47,7 @@ function App() {
 
   return (
     <>
-      <main>
+      <main className={classes.main}>
         <h1>Multi-Select Autocomplete Example</h1>
         <h3>
           <a
@@ -66,6 +66,16 @@ function App() {
           />
         )} */}
         <MultiSelectAutoComplete />
+        {/* <footer>
+          Made by
+          <a
+            href="https://portfolio-app-chatonode.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Chato Node
+          </a>
+        </footer> */}
       </main>
     </>
   )
