@@ -25,7 +25,7 @@ Once the project is running, you will see a multi-select autocomplete input fiel
 
 ## Acknowledgements
 
-This project was created by Chato Node. It is based on a coding [challenge](https://github.com/sahinkutlu/frontend-case/tree/main) provided by [AdCreative.ai](https://adcreative.ai/), and it utilizes the [Rick and Morty API](https://rickandmortyapi.com/).
+This project was created by Chato Node. It is based on a coding [challenge](https://github.com/sahinkutlu/frontend-case/tree/main) provided by [AdCreative.ai](https://adcreative.ai/), and it utilizes the [Rick and Morty API](https://rickandmortyapi.com/) for fetching data.
 
 ## Future Improvements
 

@@ -103,7 +103,7 @@ button.remove-selected-option {
 }
 
 input.search-input {
-  width: 35%;
+  width: 40%;
 
   border: none;
   outline: none;
@@ -114,6 +114,12 @@ input.search-input {
   font-weight: inherit;
   /* font-style: inherit; */
   font-style: italic;
+}
+
+@media (min-width: 40rem) {
+  input.search-input {
+    width: 35%;
+  }
 }
 
 /* Dropdown */
