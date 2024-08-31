@@ -23,7 +23,13 @@ To run this project locally, follow these steps:
 
 ## Usage
 
-Once the project is running, you will see a multi-select autocomplete input field. You can type in the input field to search for characters from the Rick and Morty series. As you type, matching characters will be displayed in a dropdown list below the input field. You can select multiple characters from the dropdown list by clicking on them or using keyboard navigation. Selected characters will be displayed as tags within the input field. To remove a selected character, click on the 'X' icon next to the tag or just simply uncheck the corresponding one from the dropdown list.
+Once the project is running, you will see a multi-select autocomplete input field.
+
+- **Search:** Type in the input field to search for characters from the Rick and Morty series.
+- **Dropdown:** Matching characters will be displayed in a dropdown list below the input field as you type.
+- **Select:** You can select multiple characters from the dropdown by clicking on them or using keyboard navigation.
+- **Display:** Selected characters will appear as tags within the input field.
+- **Remove:** To remove a selected character, click the 'X' icon next to the tag or uncheck the corresponding character in the dropdown list.
 
 ## Acknowledgements
 
