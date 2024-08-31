@@ -2,6 +2,8 @@
 
 This project is a demonstration of a multi-select autocomplete component built using React.js and TypeScript. It utilizes the [Rick and Morty API](https://rickandmortyapi.com/) to fetch character data for selection.
 
+**[Live Demo](https://component-multiselect-autocomplete.vercel.app)**
+
 ## Technologies Used
 
 - Vite.js
